@@ -11,21 +11,21 @@ Look how easy it is to use:
 Features
 --------
 
-![Screenshot](.\screenshots\blank.png)
+![Screenshot](./screenshots/blank.png)
     - Uploading images
-![Screenshot](.\screenshots\uploaded.png)
+![Screenshot](./screenshots/uploaded.png)
     - Cropping images
-![Screenshot](.\screenshots\cropped.png)
+![Screenshot](./screenshots/cropped.png)
     - Rotating images
-![Screenshot](.\screenshots\rotated.png)
+![Screenshot](./screenshots/rotated.png)
     - Flipping images
-![Screenshot](.\screenshots\flipped.png)
+![Screenshot](./screenshots/flipped.png)
     - Applying common filters to images
-![Screenshot](.\screenshots\erosion_filter.png)
+![Screenshot](./screenshots/erosion_filter.png)
     - Drawing text on images
-![Screenshot](.\screenshots\draw_text.png)
+![Screenshot](./screenshots/draw_text.png)
     - Blurring or smoothening images
-![Screenshot](.\screenshots\gaussian_blurred.png)
+![Screenshot](./screenshots/gaussian_blurred.png)
 
 Installation
 ------------
