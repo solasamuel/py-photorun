@@ -21,7 +21,7 @@ Features
     - Flipping images
 ![Screenshot](./screenshots/flipped.png)
     - Applying common filters to images
-![Screenshot](./screenshots/erosion_filter.png)
+![Screenshot](./screenshots/negative_filtered.png)
     - Drawing text on images
 ![Screenshot](./screenshots/draw_text.png)
     - Blurring or smoothening images
