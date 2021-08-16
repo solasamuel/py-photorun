@@ -1,7 +1,7 @@
-from tkinter import ttk, Tk, PhotoImage, RIDGE, Canvas, GROOVE, HORIZONTAL, Scale, filedialog
+from tkinter import ttk, Tk, PhotoImage, RIDGE, Canvas, GROOVE, HORIZONTAL, ROUND, Scale, filedialog, colorchooser
 from PIL import Image, ImageTk
 import cv2
-
+import numpy as np
 
 class Interface:
     def __init__(self, master):
@@ -78,7 +78,7 @@ class Interface:
 
         self.text_icon = PhotoImage(file="icons/typography.png")
 
-        ttk.Button(self.menu, image=self.text_icon, command=self.text_action).grid(
+        ttk.Button(self.menu, image=self.text_icon, command=self.top_text_action).grid(
             row=8, column=0, columnspan=1
         )
 
@@ -106,8 +106,8 @@ class Interface:
         ttk.Button(
             self.apply_and_cancel, image=self.cancel_icon, command=self.cancel_action
         ).grid(row=0, column=1,
-               padx=5, pady=5, sticky='sw'
-               )
+            padx=5, pady=5, sticky='sw'
+        )
 
         self.revert_icon = PhotoImage(file="icons/revert.png")
 
@@ -118,7 +118,9 @@ class Interface:
             padx=5, pady=5, sticky='sw'
         )
 
-        self.canvas = Canvas(self.menu, bg="gray", width=500, height=600)
+        self.canvasHeight = 600
+        self.canvasWidth = 500
+        self.canvas = Canvas(self.menu, bg="gray", width=self.canvasWidth, height=self.canvasHeight)
         self.canvas.grid(row=0, column=1, rowspan=10)
 
 
@@ -131,9 +133,7 @@ class Interface:
         # self.canvas.unbind("<ButtonPress>")
         # self.canvas.unbind("<B1-Motion>")
         # self.canvas.unbind("<ButtonRelease>")
-        # self.display_image(self.edited_image)
-
-
+        self.display_image(self.edited_image)
         self.side = ttk.Frame(self.menu)
         self.side.grid(row=0, column=2, rowspan=10)
         self.side.config(relief=GROOVE, padding=(50, 15))
@@ -142,15 +142,108 @@ class Interface:
         self.canvas.delete("all")
 
         self.filename = filedialog.askopenfilename()
-        self.original_image = cv2.imread(self.filename)
 
+        self.original_image = cv2.imread(self.filename)
         self.edited_image = cv2.imread(self.filename)
         self.filtered_image = cv2.imread(self.filename)
 
         self.display_image(self.edited_image)
 
     def crop_action(self):
-        pass
+        self.rectangle_id = 0
+        # self.ratio = 0
+        self.crop_start_x = 0
+        self.crop_start_y = 0
+        self.crop_end_x = 0
+        self.crop_end_y = 0
+        self.canvas.bind("<ButtonPress>", self.start_crop)
+        self.canvas.bind("<B1-Motion>", self.crop)
+        self.canvas.bind("<ButtonRelease>", self.end_crop)
+
+    def start_crop(self, event):
+        self.crop_start_x = event.x
+        self.crop_start_y = event.y
+
+    def crop(self, event):
+        if self.rectangle_id:
+            self.canvas.delete(self.rectangle_id)
+
+        self.crop_end_x = event.x
+        self.crop_end_y = event.y
+
+        self.rectangle_id = self.canvas.create_rectangle(self.crop_start_x, self.crop_start_y,
+                                                        self.crop_end_x, self.crop_end_y, width=1)
+
+    def end_crop(self, event):
+        if self.crop_start_x <= self.crop_end_x and self.crop_start_y <= self.crop_end_y:
+            start_x = int(self.crop_start_x * self.ratio)
+            start_y = int(self.crop_start_y * self.ratio)
+            end_x = int(self.crop_end_x * self.ratio)
+            end_y = int(self.crop_end_y * self.ratio)
+        elif self.crop_start_x > self.crop_end_x and self.crop_start_y <= self.crop_end_y:
+            start_x = int(self.crop_end_x * self.ratio)
+            start_y = int(self.crop_start_y * self.ratio)
+            end_x = int(self.crop_start_x * self.ratio)
+            end_y = int(self.crop_end_y * self.ratio)
+        elif self.crop_start_x <= self.crop_end_x and self.crop_start_y > self.crop_end_y:
+            start_x = int(self.crop_start_x * self.ratio)
+            start_y = int(self.crop_end_y * self.ratio)
+            end_x = int(self.crop_end_x * self.ratio)
+            end_y = int(self.crop_start_y * self.ratio)
+        else:
+            start_x = int(self.crop_end_x * self.ratio)
+            start_y = int(self.crop_end_y * self.ratio)
+            end_x = int(self.crop_start_x * self.ratio)
+            end_y = int(self.crop_start_y * self.ratio)
+
+        x = slice(start_x, end_x, 1)
+        y = slice(start_y, end_y, 1)
+
+        self.filtered_image = self.edited_image[y, x]
+        self.display_image(self.filtered_image)
+
+    def text_action(self):
+        self.rectangle_id = 0
+        # self.ratio = 0
+        self.crop_start_x = 0
+        self.crop_start_y = 0
+        self.crop_end_x = 0
+        self.crop_end_y = 0
+        self.canvas.bind("<ButtonPress>", self.start_crop)
+        self.canvas.bind("<B1-Motion>", self.crop)
+        self.canvas.bind("<ButtonRelease>", self.end_text_crop)
+
+    def end_text_crop(self, event):
+        if self.crop_start_x <= self.crop_end_x and self.crop_start_y <= self.crop_end_y:
+            start_x = int(self.crop_start_x * self.ratio)
+            start_y = int(self.crop_start_y * self.ratio)
+            end_x = int(self.crop_end_x * self.ratio)
+            end_y = int(self.crop_end_y * self.ratio)
+        elif self.crop_start_x > self.crop_end_x and self.crop_start_y <= self.crop_end_y:
+            start_x = int(self.crop_end_x * self.ratio)
+            start_y = int(self.crop_start_y * self.ratio)
+            end_x = int(self.crop_start_x * self.ratio)
+            end_y = int(self.crop_end_y * self.ratio)
+        elif self.crop_start_x <= self.crop_end_x and self.crop_start_y > self.crop_end_y:
+            start_x = int(self.crop_start_x * self.ratio)
+            start_y = int(self.crop_end_y * self.ratio)
+            end_x = int(self.crop_end_x * self.ratio)
+            end_y = int(self.crop_start_y * self.ratio)
+        else:
+            start_x = int(self.crop_end_x * self.ratio)
+            start_y = int(self.crop_end_y * self.ratio)
+            end_x = int(self.crop_start_x * self.ratio)
+            end_y = int(self.crop_start_y * self.ratio)
+
+        if self.text_on_image.get():
+            self.text_extracted = self.text_on_image.get()
+        start_font = start_x, start_y
+        print(self.color_code)#((r,g,b),'#ff00000')
+        r, g, b = tuple(map(int, self.color_code[0]))
+
+        self.filtered_image = cv2.putText(
+            self.edited_image, self.text_extracted, start_font, cv2.FONT_HERSHEY_SIMPLEX, 2, (b, g, r), 5)
+        self.display_image(self.filtered_image)
 
     def rotate_action(self):
         self.refresh_side()
@@ -265,9 +358,8 @@ class Interface:
         )
 
         self.brightness_slider = Scale(
-            self.side, from_=0, to_=2, resolution=0.1, orient=HORIZONTAL, command=self.brightness_action
-        )
-        self.brightness_slider.grid(row=1, column=2, padx=5, sticky='sw')
+            self.side, from_=0, to_=2,  resolution=0.1, orient=HORIZONTAL, command=self.brightness_action)
+        self.brightness_slider.grid(row=1, column=2, padx=5,  sticky='sw')
         self.brightness_slider.set(1)
 
         ttk.Label(
@@ -277,16 +369,43 @@ class Interface:
         )
 
         self.saturation_slider = Scale(
-            self.side, from_=-200, to_=200, resolution=0.5, orient=HORIZONTAL, command=self.brightness_action
-        )
-        self.saturation_slider.grid(row=3, column=2, padx=5, sticky='sw')
+            self.side, from_=-200, to=200, resolution=0.5, orient=HORIZONTAL, command=self.saturation_action)
+        self.saturation_slider.grid(row=3, column=2, padx=5,  sticky='sw')
         self.saturation_slider.set(0)
 
 
     def draw_action(self):
-        pass
+        self.color_code = ((255, 0, 0), '#ff0000')
+        self.refresh_side()
+        self.canvas.bind("<ButtonPress>", self.start_draw)
+        self.canvas.bind("<B1-Motion>", self.draw)
+        self.draw_color_button = ttk.Button(
+            self.side, text="Pick A Color", command=self.choose_color)
+        self.draw_color_button.grid(
+            row=0, column=2, padx=5, pady=5, sticky='sw')
 
-    def text_action(self):
+    def choose_color(self):
+        self.color_code = colorchooser.askcolor(title="Choose color")
+
+    def start_draw(self, event):
+        self.x = event.x
+        self.y = event.y
+        self.draw_ids = []
+
+    def draw(self, event):
+        print(self.draw_ids)
+        self.draw_ids.append(self.canvas.create_line(self.x, self.y, event.x, event.y, width=2,
+                                                    fill=self.color_code[-1], capstyle=ROUND, smooth=True))
+
+        cv2.line(self.filtered_image, (int(self.x * self.ratio), int(self.y * self.ratio)),
+                 (int(event.x * self.ratio), int(event.y * self.ratio)),
+                 (0, 0, 255), thickness=int(self.ratio * 2),
+                lineType=8)
+
+        self.x = event.x
+        self.y = event.y
+
+    def top_text_action(self):
         self.refresh_side()
         ttk.Label(self.side, text="Enter a text").grid(row=0, column=0)
 
@@ -294,71 +413,123 @@ class Interface:
         pass
 
     def apply_action(self):
-        pass
+        self.edited_image = self.filtered_image
+        self.display_image(self.edited_image)
 
     def cancel_action(self):
-        pass
+        self.display_image(self.edited_image)
 
     def revert_action(self):
-        pass
+        self.edited_image = self.original_image.copy()
+        self.display_image(self.original_image)
 
     def negative_action(self):
-        pass
+        self.filtered_image = cv2.bitwise_not(self.edited_image)
+        self.display_image(self.filtered_image)
 
     def bw_action(self):
-        pass
+        self.filtered_image = cv2.cvtColor(
+            self.edited_image, cv2.COLOR_BGR2GRAY)
+        self.filtered_image = cv2.cvtColor(
+            self.filtered_image, cv2.COLOR_GRAY2BGR)
+        self.display_image(self.filtered_image)
 
     def stylisation_action(self):
-        pass
+        self.filtered_image = cv2.stylization(
+            self.edited_image, sigma_s=150, sigma_r=0.25)
+        self.display_image(self.filtered_image)
 
     def sketch_action(self):
-        pass
+        ret, self.filtered_image = cv2.pencilSketch(
+            self.edited_image, sigma_s=60, sigma_r=0.5, shade_factor=0.02)
+        self.display_image(self.filtered_image)
 
     def emboss_action(self):
-        pass
+        kernel = np.array([[0, -1, -1],
+                            [1, 0, -1],
+                            [1, 1, 0]])
+        self.filtered_image = cv2.filter2D(self.original_image, -1, kernel)
+        self.display_image(self.filtered_image)
 
     def erosion_action(self):
-        pass
+        kernel = np.ones((5, 5), np.uint8)
+        self.filtered_image = cv2.erode(
+            self.edited_image, kernel, iterations=1)
+        self.display_image(self.filtered_image)
 
     def dilation_action(self):
-        pass
+        kernel = np.ones((5, 5), np.uint8)
+        self.filtered_image = cv2.dilate(
+            self.edited_image, kernel, iterations=1)
+        self.display_image(self.filtered_image)
 
     def sepia_action(self):
-        pass
+        kernel = np.array([[0.272, 0.534, 0.131],
+                            [0.349, 0.686, 0.168],
+                            [0.393, 0.769, 0.189]])
+
+        self.filtered_image = cv2.filter2D(self.original_image, -1, kernel)
+        self.display_image(self.filtered_image)
 
     def binary_thresholding_action(self):
-        pass
+        ret, self.filtered_image = cv2.threshold(
+            self.edited_image, 127, 255, cv2.THRESH_BINARY)
+        self.display_image(self.filtered_image)
 
-    def averaging_action(self):
-        pass
+    def averaging_action(self, value):
+        value = int(value)
+        if value % 2 == 0:
+            value += 1
+        self.filtered_image = cv2.blur(self.edited_image, (value, value))
+        self.display_image(self.filtered_image)
 
-    def median_action(self):
-        pass
+    def median_action(self, value):
+        value = int(value)
+        if value % 2 == 0:
+            value += 1
+        self.filtered_image = cv2.GaussianBlur(
+            self.edited_image, (value, value), 0)
+        self.display_image(self.filtered_image)
 
-    def gaussian_action(self):
-        pass
+    def gaussian_action(self, value):
+        value = int(value)
+        if value % 2 == 0:
+            value += 1
+        self.filtered_image = cv2.medianBlur(self.edited_image, value)
+        self.display_image(self.filtered_image)
 
     def rotate_left_action(self):
-        pass
+        self.filtered_image = cv2.rotate(
+            self.filtered_image, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        self.display_image(self.filtered_image)
 
     def rotate_right_action(self):
-        pass
+        self.filtered_image = cv2.rotate(
+            self.filtered_image, cv2.ROTATE_90_CLOCKWISE)
+        self.display_image(self.filtered_image)
 
     def vertical_action(self):
-        pass
+        self.filtered_image = cv2.flip(self.filtered_image, 0)
+        self.display_image(self.filtered_image)
 
     def horizontal_action(self):
-        pass
+        self.filtered_image = cv2.flip(self.filtered_image, 2)
+        self.display_image(self.filtered_image)
+    def brightness_action(self, value):
+        self.filtered_image = cv2.convertScaleAbs(
+            self.filtered_image, alpha=self.brightness_slider.get())
+        self.display_image(self.filtered_image)
 
-    def brightness_action(self):
-        pass
-
-    def saturation_action(self):
-        pass
+    def saturation_action(self, event):
+        self.filtered_image = cv2.convertScaleAbs(
+            self.filtered_image, alpha=1, beta=self.saturation_slider.get())
+        self.display_image(self.filtered_image)
 
     def display_image(self, image=None):
+        # Destroys old canvas widget
         self.canvas.delete("all")
 
+        # Render recent edited image is image is not passed
         if image is None:
             image = self.edited_image.copy()
         else:
@@ -366,32 +537,29 @@ class Interface:
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         height, width, channels = image.shape
-        ratio = height /width
+        ratio = height / width
 
         new_width = width
         new_height = height
 
-        if height > 400 or width >300:
+        # if the image size is larger than the canvas, resize it to fit
+        if height > self.canvasHeight or width >self.canvasWidth:
             if ratio < 1:
-                new_width = 300
+                new_width = self.canvasWidth
                 new_height = int(new_width * ratio)
             else:
-                new_height = 400
+                new_height = self.canvasHeight
                 new_width = int(new_height * (width / height))
 
         self.ratio = height / new_height
         self.new_image = cv2.resize(image, (new_width, new_height))
 
         self.new_image = ImageTk.PhotoImage(
-            Image.fromarray(self.new_image)
-        )
+            Image.fromarray(self.new_image))
 
         self.canvas.config(width=new_width, height=new_height)
         self.canvas.create_image(
-            new_width / 2, new_height / 2, image=self.new_image
-        )
-
-
+            new_width / 2, new_height / 2,  image=self.new_image)
 
 
 root = Tk()
