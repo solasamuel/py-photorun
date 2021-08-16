@@ -238,7 +238,7 @@ class Interface:
         if self.text_on_image.get():
             self.text_extracted = self.text_on_image.get()
         start_font = start_x, start_y
-        print(self.color_code)#((r,g,b),'#ff00000')
+        # print(self.color_code)#((r,g,b),'#ff00000')
         r, g, b = tuple(map(int, self.color_code[0]))
 
         self.filtered_image = cv2.putText(
@@ -393,7 +393,7 @@ class Interface:
         self.draw_ids = []
 
     def draw(self, event):
-        print(self.draw_ids)
+        # print(self.draw_ids)
         self.draw_ids.append(self.canvas.create_line(self.x, self.y, event.x, event.y, width=2,
                                                     fill=self.color_code[-1], capstyle=ROUND, smooth=True))
 
@@ -406,11 +406,25 @@ class Interface:
         self.y = event.y
 
     def top_text_action(self):
+        self.text_extracted = "hello"
         self.refresh_side()
-        ttk.Label(self.side, text="Enter a text").grid(row=0, column=0)
+        ttk.Label(
+            self.side, text="Enter the text").grid(row=0, column=2, padx=5, pady=5, sticky='sw')
+        self.text_on_image = ttk.Entry(self.side)
+        self.text_on_image.grid(row=1, column=2, padx=5, sticky='sw')
+        ttk.Button(
+            self.side, text="Pick A Font Color", command=self.choose_color).grid(
+            row=2, column=2, padx=5, pady=5, sticky='sw')
+        self.text_action()
 
     def save_action(self):
-        pass
+        original_file_type = self.filename.split('.')[-1]
+        filename = filedialog.asksaveasfilename()
+        filename = filename + "." + original_file_type
+
+        save_as_image = self.edited_image
+        cv2.imwrite(filename, save_as_image)
+        self.filename = filename
 
     def apply_action(self):
         self.edited_image = self.filtered_image
